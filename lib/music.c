@@ -27,7 +27,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "music.h"
+#include <music.h>
+#include <pwm.h>
 
 #define F_CONSTANT      1.059463094359
 #define A4F             440
