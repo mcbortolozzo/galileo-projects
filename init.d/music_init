@@ -1,5 +1,14 @@
 #! /bin/sh
-
+### BEGIN INIT INFO
+# Provides:          music_init
+# Required-Start:
+# Should-Start:
+# Required-Stop:
+# Default-Start:     S
+# Default-Stop:
+# Short-Description: Configures the Galileo shield pins for music example.
+# Description:       Configures the Galileo shield pins for music example.
+### END INIT INFO
 case "$1" in
     start|restart|force-reload)
 

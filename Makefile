@@ -1,5 +1,6 @@
-TARGET=test
-SRCS=$(TARGET).c music.c
+DIRS 		= examples/music examples/lcd
+LIBDIRS = lib
+
 
 FLAGS=-O2 -Wall -g -MMD
 INCLUDE=-I. -I../include
@@ -10,18 +11,24 @@ LIBS=-lgalileo2 -lm
 CFLAGS=$(FLAGS) $(INCLUDE)
 LDFLAGS=$(LIBDIR) $(LIBS)
 
-all: $(TARGET)
+all: $(DIRS)
 
-$(TARGET): $(SRCS:.c=.o)
-	$(CC) -o $@ $^ $(LDFLAGS)
+$(DIRS): $(LIBDIRS) force_look
+	$(MAKE) -C $@
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+$(LIBDIRS): force_look
+	$(MAKE) -C $@
 
--include $(SRCS:.c=.d)
+force_look:
+	true
 
 clean:
-	rm -f *~ *.bak *.o *.d
+	$(MAKE) -C examples/music clean
+	$(MAKE) -C examples/lcd clean
+	$(MAKE) -C lib clean
+
 
 distclean: clean
-	rm -f $(TARGET)
+	$(MAKE) -C examples/music distclean
+	$(MAKE) -C examples/lcd distclean
+	$(MAKE) -C lib distclean

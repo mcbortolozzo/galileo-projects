@@ -1,4 +1,32 @@
-//Author: Marcelo Bortolozzo
+/*
+  music.c: Generates and reproduces musical tune on microcontroller buzzer
+
+  Copyright (c) 2017 Marcelo Cardoso Bortolozzo <mcbortolozzo@inf.ufrgs.br>
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+    You can also obtain a copy of the GNU General Public License
+    at <http://www.gnu.org/licenses>.
+
+*/
+#include <math.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #include "music.h"
 
 #define F_CONSTANT      1.059463094359
@@ -14,7 +42,7 @@
 //Cleaner Error Messages
 void music_error(const char *error_msg);
 
-//Calculate note's period in nanoseconds (truncated)
+//Calculate note's period in nanoseconds (truncated, but precise enough)
 int get_note_period(note_t *note);
 int half_steps_from_A4(note_t *note);
 
@@ -41,6 +69,7 @@ measure_t * new_measure();
 signature_t* new_signature(int beat_count, int note_value);
 
 //Checks measure's correctness, based on signature and its contents
+//TODO
 int check_measure(signature_t signature);
 
 //Outputs the note names in Order, optionally verbose
@@ -52,10 +81,10 @@ void print_letter(int letter);
 void print_modifier(int modifier);
 void print_duration(int duration, int dot_count);
 
+//Reproduce tune, by sending pwm signals
 void play_measure(measure_t *measure, int pwm_nb, int tempo, int beat_note);
 void play_note(note_t *note, int pwm_nb, int tempo, int beat_note);
 int duration_in_micros(int duration, int dot_count, int tempo, int beat_note);
-void set_pwm(int pwm_nb, int period, int duty_cycle, int enable);
 
 ////////// FUNCTION BODIES //////////
 
@@ -311,7 +340,7 @@ void play_tune(tune_t *tune, int pwm_nb)
   for(curr = tune->measures; curr; curr = curr->next)
     play_measure(curr, pwm_nb, tune->tempo, tune->signature->note_value);
 
-  set_pwm(pwm_nb, 0,0,0);
+  pwm_set(pwm_nb, 0,0,0);
 }
 
 void play_measure(measure_t *measure, int pwm_nb, int tempo, int beat_note)
@@ -341,10 +370,11 @@ void play_note(note_t* note, int pwm_nb, int tempo, int beat_note)
     default:
       music_error("Invalid Note Type");
   }
-  set_pwm(pwm_nb, period, duty_cycle, enable);
+  //TODO add note ties
+  pwm_set(pwm_nb, period, duty_cycle, enable);
 
   usleep(duration* .95);
-  set_pwm(pwm_nb, period, duty_cycle, 0);
+  pwm_set(pwm_nb, period, duty_cycle, 0);
   usleep(duration* .05);
 
 }
@@ -358,33 +388,6 @@ int duration_in_micros(int duration, int dot_count, int tempo, int beat_note)
   int micros = beats * 60000000 / tempo;
   printf("micros: %d\n", micros);
   return micros;
-}
-
-void set_pwm(int pwm_nb, int period, int duty_cycle, int enable)
-{
-  char duty_file[100];
-  char enable_file[100];
-  char str[80];
-  int fd;
-  int duty = period * duty_cycle / 100;
-
-  snprintf(str, sizeof str, "%d\n", period);
-  printf("Period: %s", str);
-
-  pputs("/sys/class/pwm/pwmchip0/device/pwm_period", str);
-  sprintf(duty_file, "/sys/class/pwm/pwmchip0/pwm%d/duty_cycle", pwm_nb);
-  sprintf(enable_file, "/sys/class/pwm/pwmchip0/pwm%d/enable", pwm_nb);
-
-  if((fd=open("/sys/class/pwm/pwmchip0/pwm1/duty_cycle",O_WRONLY)) < 0)
-  {
-          perror("Opening duty_cycle:");
-  }
-  snprintf(str, sizeof str, "%d\n",duty);
-  printf("Cycle: %s\n", str);
-  pputs(duty_file, str);
-
-  snprintf(str, sizeof str, "%d\n", enable);
-  pputs(enable_file, str);
 }
 
 //Error Handling
