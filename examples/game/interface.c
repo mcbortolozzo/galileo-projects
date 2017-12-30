@@ -29,15 +29,26 @@
 
 #include "interface.h"
 
-const char title[]    = "| RIVER RAID |";
+const char title[]    = "RIVER RAID";
 const char start[]    = "START GAME";
-const char options[]  = "OPTIONS";
+const char options_text[]  = "OPTIONS";
 const char exit_game[]= "EXIT GAME";
+const char defeat[]   = "GAME OVER";
+const char difficulty[] = "Difficulty";
+const char confirm[]  = "Confirm";
 
 void init_interface()
 {
   clear();
   cursor_disable();
+  set_stdin_echo(0);
+}
+
+void reset_interface()
+{
+  clear();
+  cursor_enable();
+  set_stdin_echo(1);
 }
 
 //***** MENU *****//
@@ -45,7 +56,8 @@ void init_interface()
 int show_menu()
 {
   int selected_option = MENU_START;
-  char key;
+  char key = 0;
+  get_key();
   do {
     print_menu(selected_option);
     key = get_key();
@@ -61,31 +73,18 @@ int show_menu()
         break;
       default: if(key != -1) printf("%d", key);
     }
-
   } while(key != 10);
+
   return 0;
 }
 
 void print_menu(int selected_option)
 {
   clear();
-  print_menu_title();
+  print_frame(title, 5);
   print_menu_option(start, 10, selected_option == MENU_START);
-  print_menu_option(options, 15, selected_option == MENU_OPTIONS);
+  print_menu_option(options_text, 15, selected_option == MENU_OPTIONS);
   print_menu_option(exit_game, 20, selected_option == MENU_EXIT);
-}
-
-void print_menu_title()
-{
-  int i;
-  char frame[80];
-  frame[0] = 0;
-  for(i = 0; i < strlen(title); i++)
-    sprintf(frame, "%s-", frame);
-
-  print_center_x(frame, 4);
-  print_center_x(title, 5);
-  print_center_x(frame, 6);
 }
 
 void print_menu_option(const char *str, int y_pos, int is_selected)
@@ -115,25 +114,187 @@ int prev_menu(int selected_option)
     return selected_option - 1;
 }
 
+//****** OPTIONS ******//
+
 void show_options(options_t *game_options)
 {
-  //TODO
+  int selected_option = MENU_DIFFICULTY;
+  char key = 0;
+  get_key();
+  do {
+    print_options(selected_option, game_options);
+    key = get_key();
+    switch (key) {
+      case KEY_ENTER: if(selected_option == MENU_CONFIRM) return;
+      case KEY_ARROW:
+        get_key(); //skip this one ([)
+        key = get_key();
+        switch (key) {
+          case KEY_UP:    selected_option = prev_option(selected_option); break;
+          case KEY_DOWN:  selected_option = next_option(selected_option); break;
+          case KEY_LEFT:  left_option(selected_option, game_options); break;
+          case KEY_RIGHT: right_option(selected_option, game_options); break;
+        }
+        break;
+      default: if(key != -1) printf("%d", key);
+    }
+  } while(1);
+}
+
+void print_options(int selected_option, options_t *options)
+{
+    char opt_str[80];
+    clear();
+    print_frame(options_text, 5);
+    print_menu_option(difficulty, 10, selected_option == MENU_DIFFICULTY);
+    get_difficulty_options(opt_str, options);
+    print_center_x(opt_str, 15);
+    print_menu_option(confirm, 20, selected_option == MENU_CONFIRM);
+}
+
+void get_difficulty_options(char *str, options_t *options)
+{
+  str[0] = 0;
+  sprintf(str, "              "); // Padding to compensate special codes
+  print_option_value(str, "EASY", options->difficulty == EASY);
+  print_option_value(str, "NORMAL", options->difficulty == NORMAL);
+  print_option_value(str, "HARD", options->difficulty == HARD);
+  print_option_value(str, "LUNATIC", options->difficulty == LUNATIC);
+}
+
+void print_option_value(char *str, char* option, int is_selected)
+{
+  if(is_selected)
+    sprintf(str, "%s" SEL_OPTION " %s " RESET, str, option);
+  else
+    sprintf(str, "%s %s ", str, option);
+}
+
+
+int prev_option(int selected_option)
+{
+  if(selected_option == MENU_DIFFICULTY)
+    return MENU_CONFIRM;
+  else
+    return selected_option - 1;
+}
+
+int next_option(int selected_option)
+{
+  if(selected_option == MENU_CONFIRM)
+    return MENU_DIFFICULTY;
+  else
+    return selected_option + 1;
+}
+
+void left_option(int selected_option, options_t *options)
+{
+  switch (selected_option) {
+    case MENU_DIFFICULTY:
+      if(options->difficulty == EASY)
+        options->difficulty = LUNATIC;
+      else
+        options->difficulty--;
+  }
+}
+void right_option(int selected_option, options_t *options)
+{
+  switch (selected_option) {
+    case MENU_DIFFICULTY:
+      if(options->difficulty == LUNATIC)
+        options->difficulty = EASY;
+      else
+        options->difficulty++;
+  }
 }
 
 //****** MAP ******//
 
-void draw_map(map_t *map)
+void draw_map(map_t *map, ship_t *player, list_t *bullets, list_t* enemies)
 {
   int x, y;
+  gen_draw_map(map, player, bullets, enemies);
   for(y = 0; y < WINDOW_LENGTH; y++)
     for(x = 0; x < WINDOW_WIDTH; x++)
     {
-      print_char_at(map->grid[y][x], x+1, y+1);
+      switch (map->draw_grid[y][x]) {
+        case MAP_BLOCK:     printf(BLOCK_COLOR); break;
+        case MAP_WATER:     printf(WATER_COLOR); break;
+        case SHIP_SYMBOL:   printf(SHIP_COLOR); break;
+        case BULLET_SYMBOL: printf(BULLET_COLOR); break;
+        case ENEMY_SYMBOL:  printf(ENEMY_COLOR); break;
+      }
+      print_char_at(map->draw_grid[y][x], x+1, y+1);
+      printf(RESET);
     }
 }
 
+void gen_draw_map(map_t *map, ship_t *player, list_t *bullets, list_t* enemies)
+{
+  int y;
+  for(y = 0; y < WINDOW_LENGTH; y++)
+    strncpy(map->draw_grid[y], map->grid[y], WINDOW_WIDTH);
+
+  list_node_t *curr = bullets->head;
+  while (curr)
+  {
+    bullet_t *b = (bullet_t *) curr->data;
+    map->draw_grid[b->y_pos][b->x_pos] = BULLET_SYMBOL;
+    curr = curr->next;
+  }
+
+  curr = enemies->head;
+  while(curr)
+  {
+    enemy_t *e = (enemy_t *) curr->data;
+    map->draw_grid[e->y_pos][e->x_pos] = ENEMY_SYMBOL;
+    curr = curr->next;
+  }
+  map->draw_grid[player->y_pos][player->x_pos] = SHIP_SYMBOL;
+}
+
+
+void show_defeat(int score)
+{
+  char str[80];
+  clear();
+  print_frame(defeat, 5);
+  sprintf(str, "Your Score: %d", score);
+  print_center_x(str, 10);
+
+  print_center_x("Press Any Key To Continue", 20);
+  wait_key();
+}
+
+void show_continue(int lives)
+{
+  clear();
+  print_frame("YOUR SHIP EXPLODED", 5);
+  char str[80];
+  sprintf(str, "Remaining Lives: %d", lives);
+  print_center_x(str, 10);
+  print_center_x("Press Any Key To Continue", 20);
+  wait_key();
+}
 
 //***** MISC ******//
+
+void print_frame(const char *str, int y_pos)
+{
+  int i;
+  char text[80];
+  sprintf(text, "| %s |", str);
+
+  char frame[80];
+  frame[0] = 0;
+  for(i = 0; i < strlen(text); i++)
+    sprintf(frame, "%s-", frame);
+
+  print_center_x(frame, y_pos - 1);
+  print_center_x(text, y_pos);
+  print_center_x(frame, y_pos + 1);
+}
+
 void print_center_x(const char *str, int y_pos)
 {
   int len = strlen(str);
@@ -182,4 +343,12 @@ int get_key()
   tcsetattr(fileno(stdin), TCSANOW, &orig_term_attr);
 
   return c;
+}
+
+void wait_key()
+{
+  int key;
+  do {
+    key = get_key();
+  } while(key == -1);
 }

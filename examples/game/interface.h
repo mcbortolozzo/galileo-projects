@@ -25,14 +25,19 @@
 #define INTERFACE_H
 
 #include "raid.h"
+#include "list.h"
 
-#define RED   "\x1B[31m"
-#define GRN   "\x1B[32m"
-#define YEL   "\x1B[33m"
-#define BLU   "\x1B[34m"
-#define MAG   "\x1B[35m"
-#define CYN   "\x1B[36m"
-#define WHT   "\x1B[37m"
+#define BLOCK_COLOR   "\x1B[32m\x1B[42m"
+#define WATER_COLOR   "\x1B[34m\x1B[44m"
+#define SHIP_COLOR    "\x1B[0m\x1B[44m"
+#define SEL_OPTION    "\x1B[107m\x1B[30m"
+#define BULLET_COLOR  "\x1B[30m\x1B[44m"
+#define ENEMY_COLOR   "\x1B[31m\x1B[44m"
+#define RED   "\x1B[31m\x1B[41m"
+#define YEL   "\x1B[33m\x1B[43m"
+#define MAG   "\x1B[35m\x1B[45m"
+#define CYN   "\x1B[36m\x1B[46m"
+#define WHT   "\x1B[37m\x1B[47m"
 #define RESET "\x1B[0m"
 
 #define clear() printf("\033[H\033[J")
@@ -44,15 +49,26 @@
 #define MENU_OPTIONS  11
 #define MENU_EXIT     12
 
+#define MENU_DIFFICULTY   50
+#define MENU_CONFIRM      51
+
 #define WINDOW_WIDTH  60
-#define WINDOW_LENGTH 43
+#define WINDOW_LENGTH 24
 
 #define KEY_ENTER     10
 #define KEY_ARROW     27
 #define KEY_UP        65
 #define KEY_DOWN      66
+#define KEY_RIGHT     67
+#define KEY_LEFT      68
+#define KEY_SPACE     32
+
+#define SHIP_SYMBOL   'A'
+#define BULLET_SYMBOL '!'
+#define ENEMY_SYMBOL  'X'
 
 void init_interface();
+void reset_interface();
 
 /**
  * Enters the menu Interface
@@ -61,23 +77,35 @@ void init_interface();
 int show_menu();
 void print_menu(int selected_option);
 void print_menu_option(const char *str, int y_pos, int is_selected);
-void print_menu_title();
 int prev_menu(int selected_option);
 int next_menu(int selected_option);
 
-void draw_map(map_t *map);
+void draw_map(map_t *map, ship_t *player, list_t * bullets, list_t* enemy_list);
+void gen_draw_map(map_t* map, ship_t *player, list_t *bullets, list_t* enemy_list);
 
 /**
  * Shows Game options
  */
 void show_options(options_t *game_options);
+void print_options(int selected_option, options_t *options);
+int prev_option(int selected_option);
+int next_option(int selected_option);
+void left_option(int selected_option, options_t *options);
+void right_option(int selected_option, options_t *options);
+void get_difficulty_options(char *str, options_t *options);
+void print_option_value(char *str, char *option, int is_selected);
 
+void print_frame(const char *str, int y_pos);
 void print_center_x(const char *str, int y_pos);
 void print_at(const char *str, int x_pos, int y_pos);
 void print_char_at(const char c, int x_pos, int y_pos);
 
 void set_stdin_echo(int enable);
 int get_key();
+void wait_key();
+
+void show_defeat(int score);
+void show_continue(int lives);
 
 
 #endif
