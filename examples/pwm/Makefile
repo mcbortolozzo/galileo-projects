@@ -1,4 +1,5 @@
-TARGET = lcdbutton lcdservo
+TARGET		= dac
+SRCS=$(TARGET).c
 
 FLAGS=-O2 -Wall -g
 INCLUDE=-I. -I../../include
@@ -10,10 +11,7 @@ LDFLAGS=$(LIBDIR) $(LIBS)
 
 all: $(TARGET)
 
-lcdbutton: lcdbutton.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-
-lcdservo: lcd-servo.o
+$(TARGET): $(SRCS:.c=.o)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c

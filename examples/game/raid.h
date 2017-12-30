@@ -28,12 +28,20 @@
 #define DEFAULT_Y_POS 20
 #define STARTING_HP   5 //TODO different hp according to difficulty
 
+#define MAP_BLOCK     'T'
+#define MAP_WATER     ' '
+
 typedef struct ship
 {
   int hp;
   int x_pos;
   int y_pos;
 } ship_t;
+
+typedef struct map
+{
+  char **grid;
+} map_t;
 
 typedef struct bullet
 {
@@ -54,11 +62,24 @@ typedef struct options
   int difficulty;
 } options_t;
 
+typedef struct prob_gen
+{
+  int island;
+  int close_left;
+  int close_right;
+  int open_left;
+  int open_right;
+} prob_gen_t;
+
 int start_game(options_t *game_options);
 
 // Object Initialization
 ship_t *new_ship(options_t* game_options);
 bullet_t *new_bullet(ship_t *player_ship);
 enemy_t *new_enemy(); //TODO include stuff to configure this
+map_t *new_map();
+void generate_map_line(char *next_line, char* prev_line);
+void get_probability_mode(char *prev_line, prob_gen_t* p_gen);
+void move_map_step(map_t *map);
 
 #endif

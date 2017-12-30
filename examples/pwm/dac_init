@@ -1,0 +1,85 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          music_init
+# Required-Start:
+# Should-Start:
+# Required-Stop:
+# Default-Start:     S
+# Default-Stop:
+# Short-Description: Configures the Galileo shield pins for music example.
+# Description:       Configures the Galileo shield pins for music example.
+### END INIT INFO
+case "$1" in
+    start|restart|force-reload)
+
+  if [ ! -d /sys/class/pwm/pwmchip0/pwm1 ] ; then
+    echo -n "1" > /sys/class/pwm/pwmchip0/export
+  fi
+  chgrp pwm /sys/class/pwm/pwmchip0/device/pwm_period
+  chmod g+w /sys/class/pwm/pwmchip0/device/pwm_period
+  chgrp pwm /sys/class/pwm/pwmchip0/pwm1/duty_cycle
+  chmod g+w /sys/class/pwm/pwmchip0/pwm1/duty_cycle
+  chgrp pwm /sys/class/pwm/pwmchip0/pwm1/enable
+  chmod g+w /sys/class/pwm/pwmchip0/pwm1/enable
+
+  if [ ! -d /sys/class/gpio/gpio16 ] ; then
+    echo -n "16" > /sys/class/gpio/export
+  fi
+  echo -n "out" > /sys/class/gpio/gpio16/direction
+  echo -n "0" > /sys/class/gpio/gpio16/value
+
+  if [ ! -d /sys/class/gpio/gpio17 ] ; then
+    echo -n "17" > /sys/class/gpio/export
+  fi
+  echo -n "in" > /sys/class/gpio/gpio17/direction
+
+  if [ ! -d /sys/class/gpio/gpio76 ] ; then
+    echo -n "76" > /sys/class/gpio/export
+  fi
+  echo -n "0" > /sys/class/gpio/gpio76/value
+
+  if [ ! -d /sys/class/gpio/gpio64 ] ; then
+    echo -n "64" > /sys/class/gpio/export
+  fi
+  echo -n "1" > /sys/class/gpio/gpio64/value
+
+  # gpio49 = in = neither pull-up nor pull-down
+	if [ ! -d /sys/class/gpio/gpio49 ] ; then
+	    echo -n "49" > /sys/class/gpio/export
+	fi
+	echo -n "in" > /sys/class/gpio/gpio49/direction
+
+  chgrp adc /sys/bus/iio/devices/iio:device0/in_voltage0_raw
+  chmod g+r /sys/bus/iio/devices/iio:device0/in_voltage0_raw
+  chgrp adc /sys/bus/iio/devices/iio:device0/in_voltage0_scale
+  chmod g+r /sys/bus/iio/devices/iio:device0/in_voltage0_scale
+
+  ;;
+    stop)
+	echo "in" > /sys/class/gpio/gpio57/direction
+	ecbo "57" > /sys/class/gpio/unexport
+
+	echo "1" > /sys/class/gpio/gpio60/value
+	echo "60" > /sys/class/gpio/unexport
+
+	echo "in" > /sys/class/gpio/gpio59/direction
+	echo "59" > /sys/class/gpio/unexport
+
+  echo -n "0" > /sys/class/pwm/pwmchip0/pwm1/enable
+  echo -n "76" > /sys/class/gpio/unexport
+  echo -n "64" > /sys/class/gpio/unexport
+  echo -n "17" > /sys/class/gpio/unexport
+  echo -n "1" > /sys/class/gpio/gpio16/value
+  echo -n "16" > /sys/class/gpio/unexport
+  echo -n "1" > /sys/class/pwm/pwmchip0/unexport
+	;;
+    status)
+	;;
+    *)
+	echo -n "Usage: $0 "
+	echo "{start|stop|restart|force-reload|status}"
+	exit 1
+	;;
+esac
+
+exit 0

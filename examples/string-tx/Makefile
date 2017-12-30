@@ -1,4 +1,5 @@
-TARGET = lcdbutton lcdservo
+TARGET		= stx srcv
+SRCS= string-tx.c string-rcv.c
 
 FLAGS=-O2 -Wall -g
 INCLUDE=-I. -I../../include
@@ -10,10 +11,10 @@ LDFLAGS=$(LIBDIR) $(LIBS)
 
 all: $(TARGET)
 
-lcdbutton: lcdbutton.o
+stx: string-tx.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-lcdservo: lcd-servo.o
+srcv: string-rcv.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c

@@ -1,20 +1,22 @@
-TARGET = lcdbutton lcdservo
+TARGET = raid
+SRCS = $(wildcard *.c)
 
 FLAGS=-O2 -Wall -g
 INCLUDE=-I. -I../../include
 LIBDIR=-L../../lib
 LIBS=-lgalileo2 -lm
 
+
 CFLAGS=$(FLAGS) $(INCLUDE)
 LDFLAGS=$(LIBDIR) $(LIBS)
 
-all: $(TARGET)
+TESTLD=$(LIBDIR) -lm
 
-lcdbutton: lcdbutton.o
+all: $(SRCS:.c=.o)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-lcdservo: lcd-servo.o
-	$(CC) -o $@ $^ $(LDFLAGS)
+test: $(SRCS:.c=.o)
+	gcc -o $@ $^ $(TESTLD)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
