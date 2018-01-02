@@ -1,34 +1,26 @@
-TARGETS		= ode light fluorescent sw
+TARGET		= slight
+SRCS=servo-light.c
 
 FLAGS=-O2 -Wall -g
 INCLUDE=-I. -I../../include
 LIBDIR=-L../../lib
 LIBS=-lgalileo2 -lm
 
-#CC=$(CROSS_COMPILE)gcc
 CFLAGS=$(FLAGS) $(INCLUDE)
 LDFLAGS=$(LIBDIR) $(LIBS)
 
-all: $(TARGETS)
+all: $(TARGET)
 
-ode: ode.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-
-light: light.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-
-fluorescent: fluorescent.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-
-
-sw: sw.o
+$(TARGET): $(SRCS:.c=.o)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+-include $(SRCS:.c=.d)
+
 clean:
 	rm -f *~ *.bak *.o *.d
 
 distclean: clean
-	rm -f $(TARGETS)
+	rm -f $(TARGET)

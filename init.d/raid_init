@@ -1,0 +1,62 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          raid_init
+# Required-Start:
+# Should-Start:
+# Required-Stop:
+# Default-Start:     S
+# Default-Stop:
+# Short-Description: Configures GPIO and ADC for Raid Example.
+# Description:       Configures GPIO and ADC for Raid Example.
+### END INIT INFO
+
+case "$1" in
+    start|restart|force-reload)
+	# gpio49 = in = neither pull-up nor pull-down
+	if [ ! -d /sys/class/gpio/gpio49 ] ; then
+	    echo -n "49" > /sys/class/gpio/export
+	fi
+	echo -n "in" > /sys/class/gpio/gpio49/direction
+
+  chgrp adc /sys/bus/iio/devices/iio:device0/in_voltage0_raw
+  chmod g+r /sys/bus/iio/devices/iio:device0/in_voltage0_raw
+  chgrp adc /sys/bus/iio/devices/iio:device0/in_voltage0_scale
+  chmod g+r /sys/bus/iio/devices/iio:device0/in_voltage0_scale
+
+  if [ ! -d /sys/class/gpio/gpio6 ] ; then
+	    echo -n "6" > /sys/class/gpio/export
+	fi
+	echo -n "in" > /sys/class/gpio/gpio6/direction
+
+	if [ ! -d /sys/class/gpio/gpio36 ] ; then
+	    echo -n "36" > /sys/class/gpio/export
+	fi
+	echo -n "out" > /sys/class/gpio/gpio36/direction
+	echo -n "1" > /sys/class/gpio/gpio36/value
+
+  if [ ! -d /sys/class/gpio/gpio37 ] ; then
+      echo -n "37" > /sys/class/gpio/export
+  fi
+  echo -n "in" > /sys/class/gpio/gpio37/direction
+
+	chgrp gpio /sys/class/gpio/gpio62/value
+	chmod g+r /sys/class/gpio/gpio62/value
+    	;;
+    stop)
+
+	echo -n "49" > /sys/class/gpio/unexport
+  echo -n "6" > /sys/class/gpio/unexport
+  echo -n "36" > /sys/class/gpio/unexport
+  echo -n "37" > /sys/class/gpio/unexport
+
+	;;
+    status)
+	;;
+    *)
+	echo -n "Usage: $0 "
+	echo "{start|stop|restart|force-reload|status}"
+	exit 1
+	;;
+esac
+
+exit 0

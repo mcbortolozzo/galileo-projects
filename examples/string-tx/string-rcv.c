@@ -38,6 +38,7 @@ int get_sig_value(int fd)
 
   lseek(fd,0,SEEK_SET);
   read(fd,data_str,sizeof data_str);
+  //printf("%s\n", data_str);
   return atoi(data_str);
 }
 
@@ -97,16 +98,16 @@ int main(int argc, char* argv[])
   int fd;
   char str[80];
   int i;
-  double freq = 50.0;
+  double freq = 75.0;
 
   if((fd=open("/sys/bus/iio/devices/iio:device0/in_voltage0_raw",O_RDONLY)) < 0)
   {
           perror("Opening in_voltage0raw:");
           exit(-1);
   }
-
+  printf("NOISE AVG: %d\n", get_noise_avg(fd, 100));
   printf("Setting up Receiver\n");
-  int ref = 250;// * SIG_THRESHOLD;
+  int ref = 1300;// * SIG_THRESHOLD;
   printf("Waiting for Preamble\n");
   printf("threshold = %d\n", ref);
 

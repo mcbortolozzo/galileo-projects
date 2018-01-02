@@ -90,7 +90,7 @@ void tx_string(char *str, double op_freq, int fd)
     if(i % 5 == 0)
     {
       disable_out(fd);
-      usleep(10*wait_p);
+      usleep(5*wait_p);
       tx_preamble(op_freq, fd);
     }
     c = str[i++];
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 {
   char str[] = "olar-abcdefghijklmnopqrstuvwxyz";
   int fd;
-  int freq = 50;
+  int freq = 75;
 
   fd = open("/sys/class/gpio/gpio62/value",O_WRONLY);
   tx_string(str, freq, fd);

@@ -26,6 +26,10 @@
 
 #include "list.h"
 
+#ifdef GALILEO
+#define MAX_VOLTAGE 5
+#endif
+
 #define DEFAULT_X_POS 30
 #define DEFAULT_Y_POS 22
 
@@ -48,11 +52,20 @@ typedef struct ship
   int x_pos;
   int y_pos;
   weapon_t *weapon;
+#ifdef GALILEO
+  int button_file;
+  int control_file;
+  float scale;
+#endif
 } ship_t;
 
 #define WEAPON_DEFAULT  30
 
+#ifdef GALILEO
+#define RELOAD_DEFAULT  5
+#else
 #define RELOAD_DEFAULT  50
+#endif
 
 typedef struct map
 {
@@ -60,7 +73,11 @@ typedef struct map
   char **draw_grid;
 } map_t;
 
+#ifdef GALILEO
+#define BULLET_SPEED_DEFAULT 1
+#else
 #define BULLET_SPEED_DEFAULT 10
+#endif
 
 typedef struct bullet
 {
@@ -142,6 +159,7 @@ int check_player_collision(map_t *map, ship_t *player, list_t *enemies);
 int check_defeat(map_t *map, ship_t *player, int score);
 void restart_match(map_t *map, list_t *bullets, list_t *enemies);
 
+void fire_weapon(ship_t *player, list_t *bullets);
 bool move_bullet(void *args);
 bool bullet_collision(void *args);
 bool move_enemy(void *e);

@@ -31,7 +31,7 @@
 #include <galileo2io.h>
 
 int values[] = {50,89,99,72,28,1,11,50};
-int period = 4000000;
+int period = 700000;
 int main(int argc,char * argv[])
 {
   int fd;
@@ -57,7 +57,7 @@ int main(int argc,char * argv[])
           }
           else
             duty_cycle++;
-          usleep(7000);
+          usleep(5);
 
           int cycle = (int) (period * values[duty_cycle] / 100);
           snprintf(str, sizeof str, "%d\n", cycle);

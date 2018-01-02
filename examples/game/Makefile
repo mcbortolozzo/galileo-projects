@@ -6,20 +6,25 @@ INCLUDE=-I. -I../../include
 LIBDIR=-L../../lib
 LIBS=-lgalileo2 -lm
 
+ifeq ($(galileo), 1)
+	GALILEO := -DGALILEO
+endif
 
 CFLAGS=$(FLAGS) $(INCLUDE)
 LDFLAGS=$(LIBDIR) $(LIBS)
 
 TESTLD=$(LIBDIR) -lm
 
-all: $(SRCS:.c=.o)
+all: $(TARGET)
+
+$(TARGET): $(SRCS:.c=.o)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 test: $(SRCS:.c=.o)
 	gcc -o $@ $^ $(TESTLD)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(GALILEO) $(CFLAGS) -c -o $@ $<
 
 -include $(SRCS:.c=.d)
 

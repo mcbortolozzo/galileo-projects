@@ -29,6 +29,13 @@
 
 #include "interface.h"
 
+#ifdef GALILEO
+#include <fcntl.h>
+#include <unistd.h>
+#include <galileo2io.h>
+#include <errno.h>
+#endif
+
 const char title[]    = "RIVER RAID";
 const char start[]    = "START GAME";
 const char options_text[]  = "OPTIONS";
@@ -39,9 +46,9 @@ const char confirm[]  = "Confirm";
 
 void init_interface()
 {
-  clear();
+  /*clear();
   cursor_disable();
-  set_stdin_echo(0);
+  set_stdin_echo(0);*/
 }
 
 void reset_interface()
@@ -56,6 +63,33 @@ void reset_interface()
 int show_menu()
 {
   int selected_option = MENU_START;
+
+#ifdef GALILEO
+  int fd;
+  if((fd=open("/sys/class/gpio/gpio6/value",O_RDONLY)) < 0)
+  {
+    printf("%d\n", errno);
+    printf("Opening /sys/class/gpio/gpio6/value");
+    exit(-1);
+  }
+  while(1)
+  {
+    print_menu(selected_option);
+    usleep(1000);
+    char s;
+    lseek(fd,0,SEEK_SET);
+    read(fd,&s,sizeof s);
+    if(s == '1') return MENU_START;
+
+    /*int fd2 = player->control_file;
+    char data_str[80];
+    lseek(fd2,0,SEEK_SET);
+    read(fd2,data_str,sizeof data_str);
+    int pos = atoi(data_str) * player->scale;
+    player->x_pos = (WINDOW_WIDTH - 2) * pos / MAX_VOLTAGE;*/
+  }
+  close(fd);
+#else
   char key = 0;
   get_key();
   do {
@@ -74,7 +108,7 @@ int show_menu()
       default: if(key != -1) printf("%d", key);
     }
   } while(key != 10);
-
+#endif
   return 0;
 }
 
@@ -347,8 +381,25 @@ int get_key()
 
 void wait_key()
 {
+#ifdef GALILEO
+int fd;
+if((fd=open("/sys/class/gpio/gpio6/value",O_RDONLY)) < 0)
+{
+  printf("%d\n", errno);
+  printf("Opening /sys/class/gpio/gpio6/value");
+  exit(-1);
+}
+while(1)
+{
+  char s;
+  lseek(fd,0,SEEK_SET);
+  read(fd,&s,sizeof s);
+  if(s == '1') return;
+}
+#else
   int key;
   do {
     key = get_key();
   } while(key == -1);
+#endif
 }

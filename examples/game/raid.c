@@ -29,6 +29,12 @@
 #include "interface.h"
 #include "raid_list.h"
 
+#ifdef GALILEO
+#include <fcntl.h>
+#include <unistd.h>
+#include <galileo2io.h>
+#endif
+
 int start_game(options_t *game_options)
 {
   ship_t *player = new_ship(game_options);
@@ -42,6 +48,9 @@ int start_game(options_t *game_options)
     list_t *enemy_list = new_enemy_list();
     int cycles = 0;
     int map_speed = get_map_speed(game_options);
+#ifdef GALILEO
+    map_speed /= 10;
+#endif
     while(1)
     {
       move_args_t args = {map, enemy_list};
@@ -62,7 +71,9 @@ int start_game(options_t *game_options)
         break;
       }
       move_player(player, bullet_list);
-      usleep(10000);
+#ifndef GALILEO
+      usleep(100000);
+#endif
       cycles++;
     }
   }
@@ -84,6 +95,21 @@ ship_t *new_ship(options_t* game_options)
     case LUNATIC: ship->hp = LUNATIC_HP; break;
   }
   ship->weapon = new_weapon();
+#ifdef GALILEO
+  if((ship->button_file=open("/sys/class/gpio/gpio6/value",O_RDONLY)) < 0)
+  {
+    printf("Opening /sys/class/gpio/gpio6/value");
+    exit(-1);
+  }
+  if((ship->control_file=open("/sys/bus/iio/devices/iio:device0/in_voltage0_raw",O_RDONLY)) < 0)
+  {
+          perror("Opening in_voltage0raw:");
+          exit(-1);
+  }
+  char data_str[80];
+  pgets(data_str,sizeof data_str,"/sys/bus/iio/devices/iio:device0/in_voltage0_scale");
+  ship->scale=atof(data_str)/1000.0;
+#endif
   return ship;
 }
 
@@ -280,18 +306,39 @@ void clear_map(map_t *map)
 
 //***** PLAYER *****//
 
+void fire_weapon(ship_t *player, list_t *bullets)
+{
+  if(!player->weapon->curr_reload)
+  {
+    player->weapon->curr_reload = player->weapon->reload_time;
+    list_append(bullets, new_bullet(player));
+  }
+}
+
 void move_player(ship_t *player, list_t* bullet_list)
 {
-  char key = 0;
   if(player->weapon->curr_reload) player->weapon->curr_reload--;
+#ifdef GALILEO
+  int fd = player->button_file;
+  char s;
+  lseek(fd,0,SEEK_SET);
+  read(fd,&s,sizeof s);
+  if(s == '1') fire_weapon(player, bullet_list);
+
+  int fd2 = player->control_file;
+  char data_str[80];
+  lseek(fd2,0,SEEK_SET);
+  read(fd2,data_str,sizeof data_str);
+  float pos = atoi(data_str) * player->scale;
+  player->x_pos = (WINDOW_WIDTH - 2) * pos / MAX_VOLTAGE + 1;
+  printf("%f %d %d",pos, MAX_VOLTAGE, player->x_pos);
+  //exit(0);
+#else
+  char key = 0;
   key = get_key();
   switch (key) {
     case KEY_SPACE:
-      if(!player->weapon->curr_reload)
-      {
-        player->weapon->curr_reload = player->weapon->reload_time;
-        list_append(bullet_list, new_bullet(player));
-      }
+      fire_weapon(player->weapon, bullet_list);
      break;
     case KEY_ARROW:
       get_key(); //skip this one ([)
@@ -302,6 +349,7 @@ void move_player(ship_t *player, list_t* bullet_list)
         player->x_pos++;
       break;
   }
+#endif
 }
 
 int check_player_collision(map_t *map, ship_t *player, list_t *enemies)
@@ -450,7 +498,7 @@ void generate_enemies(list_t *enemy_list, options_t *options, map_t *map)
 int main(int argc, char* argv[])
 {
   srand(time(NULL));
-  init_interface();
+  //init_interface();
 
   int menu_option = 0;
   options_t *game_options = new_options();

@@ -36,7 +36,7 @@
 #define MIN_OCTAVE      0
 #define MAX_OCTAVE      6
 
-#define DEFAULT_VOLUME  5
+#define DEFAULT_VOLUME  50
 
 ////////// INTERNAL HEADERS //////////
 
@@ -362,7 +362,7 @@ void play_note(note_t* note, int pwm_nb, int tempo, int beat_note)
   switch (note->type) {
     case NOTE:
       period = get_note_period(note);
-      duty_cycle = note->volume / 2;
+      duty_cycle = period * note->volume/2 / 100;
       enable = 1;
       break;
     case PAUSE:
